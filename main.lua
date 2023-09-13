@@ -45,17 +45,19 @@ function love.load()
 end
 
 function love.keypressed(key)
-    if key == 'escape' then
-        gamemode:set2Gamemode(DioBrando:menuHandle(gamemode:getGamemode(), key))  -- pause menu
-    end
 
-    if key == 'f3' then -- turn on or off debug mode
-        if debug then
-            debug = false
-        else
-            debug = true
+    switch (key) {
+        ['escape'] = function()
+            gamemode:set2Gamemode(DioBrando:menuHandle(gamemode:getGamemode(), key))  -- pause menu
+        end,
+        ['f3'] = function() -- turn on or off debug mode
+            if debug then
+                debug = false
+            else
+                debug = true
+            end
         end
-    end
+    }
 
     gamemode:keypressed(key)
     --key pressed
@@ -82,8 +84,6 @@ function love.update(dt)
                 time_aproximation = int_time
             end
 
-            zawarudo:update(dt)     -- world update
-
             -- limita o numero de asteroids em tela
             if #asteroids < 5 then
                 asteroid_timer = asteroid_timer - dt
@@ -93,15 +93,13 @@ function love.update(dt)
                     table.insert(asteroids, Asteroid(zawarudo, player.body))
                 end
             end
-            
-            player:update(dt)
 
             for a, asteroid in ipairs(asteroids) do
                 
                 asteroid:update(dt)     -- asteroid
 
                 -- check player collision
-                if asteroid:playerCollision(player) and not player.respawn then
+                if asteroid:collision(player) and not player.respawn then
                     player:collision()
                     gamemode:addScore(-100)     -- score por perder uma vida
 
@@ -112,18 +110,26 @@ function love.update(dt)
 
                 -- check bullet collision
                 for i, bullet in ipairs(player.shot) do
-                    if asteroid:bulletCollision(bullet) then
+                    if asteroid:collision(bullet) then
 
                         gamemode:addScore(200)    -- score por acertar um asteroide
 
+                        bullet.body:destroy()
                         table.remove(player.shot, i)
-                    end
-                    if not asteroid.live then       -- destroys asteroid if is dead
-                        table.remove(asteroids, a)
-                        break
+                        
+                        if not asteroid.live then       -- destroys asteroid if is dead
+                            break
+                        end
                     end
                 end
+
+                if not asteroid.live then
+                    asteroid:death()
+                    table.remove(asteroids, a)
+                end
             end
+            player:update(dt)
+            zawarudo:update(dt)     -- world update
         else
             DioBrando:DiosWorld(gamemode:getGamemode())   -- what happens in Dio's world
         end
@@ -182,4 +188,14 @@ function love.gameInit()
 
     gameTime = 0                -- in game timer
     time_aproximation = 0       -- timer rounded
+end
+
+function switch (value)
+    return function (cases)
+        local f = cases[value]
+        if f then
+            f()
+        end
+    end
+        
 end

@@ -3,6 +3,7 @@ Player = Class{}
 function Player:init(zawarudo)
     self.world = zawarudo
     self.body = love.physics.newBody(zawarudo, WINDOW_WIDTH/2, WINDOW_HEIGHT/2, 'dynamic')
+    self.body:setMass(8)
     
     -- velocidade do player
     self.impulso = 50              -- impulso de velocidade dado no comando
@@ -91,7 +92,6 @@ function Player:update(dt)
         self.respawn_timer = self.respawn_timer - dt    -- respawn timer
         self.blink_timer = self.blink_timer - dt        -- blink animation
         
-
         if self.respawn_timer <= 0 then
             self.respawn_timer = self.respawn_timer_reset
             self.respawn = false
@@ -152,7 +152,6 @@ function Player:render()
             WINDOW_WIDTH - dx - spacing*i - self.live_graph['3'][1], dy + self.live_graph['3'][2]
         )
     end
-
 
     for i, bullet in ipairs(self.shot) do
         bullet:render(dt)
@@ -264,13 +263,12 @@ function Player:resetAll()
 end
 
 function Player:collision()
-
     self.health = self.health - 1
-
-    self:resetPlayer()
-    self.respawn = true
 
     if self.health <= 0 then
         self.live = false
-    end
+    else
+        self:resetPlayer()
+        self.respawn = true
+    end 
 end

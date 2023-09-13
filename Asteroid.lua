@@ -43,7 +43,10 @@ function Asteroid:init(zawarudo, player_body)
         x = math.random(-WINDOW_WIDTH/2, WINDOW_WIDTH*3/2)
         y = math.random(-WINDOW_HEIGHT/2, WINDOW_HEIGHT*3/2)
     end
+
+    -- body
     self.body = love.physics.newBody(zawarudo, x, y, "dynamic")
+    self.body:setMass(10)
 
     --===========================================================================================================================
 
@@ -112,17 +115,15 @@ function Asteroid:update(dt)
         end
         
         if self.life_time <= 0 and not self.onScene then
-            self:destruct()  -- executa o asteoide (sem sofrer)
+            self.live = false  -- executa o asteoide (sem sofrer)
         end
     end
 end
 
 function Asteroid:render()
-    if self.live then
-        --desenha os vertices do asteroid
+    --desenha os vertices do asteroid
         love.graphics.setColor(1,1,1,1)
         love.graphics.polygon('line', self.body:getWorldPoints(self.shape:getPoints()))
-    end
 end
 
 function Asteroid:Debug()
@@ -134,40 +135,23 @@ function Asteroid:Debug()
     love.graphics.setColor(1,1,1,1)
 end
 
-function Asteroid:destruct()
+function Asteroid:death()
+    self.fixture:destroy()
     self.body:destroy()
-    self.body:release()
-    self.live = false
 end
 
-function Asteroid:bulletCollision(bullet)
+function Asteroid:collision(other)
 
-    -- se distancia da ponta do tiro ate o centro do asteroid for menor do que o raio da forma
-    if bullet.fade > 0 then
-        local point = bullet:getHitpoint()
+    local mod = math.sqrt((self.body:getX() - other.body:getX())^2 + (self.body:getY() - other.body:getY())^2)
 
-        if math.sqrt((point[1] - self.body:getX())^2 + (point[2] - self.body:getY())^2) <= self.hitbox then
-            self.health = self.health - 1
-            if self.health <= 0 then
-                self:destruct()
-            end
-            return true
+    if mod <= self.hitbox + other.hitbox then
+
+        self.health = self.health - 1
+
+        if self.health <= 0 then
+            self.live = false
         end
+        return true
     end
     return false
 end
-
-function Asteroid:playerCollision(player)
-
-    if  self.live then
-
-        -- distancia do player
-        local mod = math.sqrt((self.body:getX() - player.body:getX())^2 + (self.body:getY() - player.body:getY())^2)
-
-        if mod < player.hitbox + self.hitbox then
-            return true
-        end 
-    end
-    return false
-end
-
